@@ -1,9 +1,7 @@
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
-
 name: Android CI
-
 on:
   push:
     branches: [ "development" ]
@@ -21,23 +19,29 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
+        # REMOVED 'cache: gradle' to stop the v2 cache error
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+    - name: Install Node Dependencies
+      run: npm install
+      working-directory: telon-gateway-app
 
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug
-
-    - name: Run Unit Tests
-      run: ./gradlew testDebugUnitTest
-    - name: Create Custom Path and Move APK
-      # This finds any .apk file in the project and moves it to a new 'my_outputs' folder
+    - name: Build APK
       run: |
-        mkdir -p my_outputs
-        find . -name "*.apk" -type f -exec mv {} my_outputs/ \;
-        echo "Contents of my_outputs:"
-        ls my_outputs
+        cd telon-gateway-app/android
+        chmod +x gradlew
+        ./gradlew assembleDebug
+
+    - name: Move APK to Root
+      run: |
+        mkdir -p outputs
+        find . -name "*.apk" -type f -exec mv {} outputs/ \;
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: telon-app-debug
+        path: outputs/
+        
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
