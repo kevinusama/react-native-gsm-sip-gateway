@@ -1,27 +1,23 @@
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 name: Android CI
 on:
   push:
-    branches: [ "development" ]
-  pull_request:
     branches: [ "development" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
-        # REMOVED 'cache: gradle' to stop the v2 cache error
+        # DO NOT add "cache: gradle" here. It is what triggers the v2 error.
 
-    - name: Install Node Dependencies
+    - name: Install Dependencies
       run: npm install
       working-directory: telon-gateway-app
 
@@ -31,9 +27,11 @@ jobs:
         chmod +x gradlew
         ./gradlew assembleDebug
 
-    - name: Move APK to Root
-      run: |
-        mkdir -p outputs
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: Telon-App
+        path: telon-gateway-app/android/app/build/outputs/apk/debug/*.apk
         find . -name "*.apk" -type f -exec mv {} outputs/ \;
 
     - name: Upload APK
